@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zhongfeng.api.modules.img.mapper.ImgMapper">
+
+    <!--    保存图片-->
+    <insert id="saveImg">
+        INSERT INTO `license`
+        SET `name` = #{imgName}
+    </insert>
+
+    <!--    根据图片名字和查询图片id-->
+    <select id="queryImg" resultType="integer">
+        SELECT id
+        FROM `license`
+        WHERE name = #{imgName}
+    </select>
+
+    <!--    -->
+    <select id="queryId" resultType="integer">
+        SELECT
+            auto_increment as autoId
+        FROM
+            information_schema. TABLES
+        WHERE
+            Table_Schema = 'management_system'
+          AND table_name = 'license'
+    </select>
+
+</mapper>

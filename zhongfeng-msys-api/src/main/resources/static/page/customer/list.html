@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>客户信息</title>
+    <!-- 引入样式 -->
+    <link rel="stylesheet" href="../../js/element-ui-2.13.0/lib/theme-chalk/index.css">
+    <link rel="stylesheet" href="../../styles/common.css"/>
+    <link rel="stylesheet" href="../../styles/index.css"/>
+    <link rel="stylesheet" href="../../styles/icon/iconfont.css"/>
+    <link rel="stylesheet" href="../../styles/pages.css"/>
+</head>
+<body>
+<div class="dashboard-container" id="category-app">
+    <div class="container">
+        <div
+                class="tableBar"
+                style="display: inline-block"
+        >
+            <el-popover
+                    style="width:100%;height:100%"
+                    placement="right"
+                    width="40%"
+                    height="40%"
+                    trigger="click"
+                    v-model="showPopover"            >
+                <el-image
+                        id="license"
+                        :src="newSrc"
+                        @click="closePopover"></el-image>
+            </el-popover>
+            <el-input
+                    v-model="company"
+                    placeholder="请输入公司名称(按Enter查询)"
+                    style="width: 250px"
+                    clearable
+                    @keyup.enter.native="handleQuery"
+            >
+            </el-input>
+            <el-input
+                    v-model="wechatName"
+                    placeholder="请输入微信名"
+                    style="width: 250px"
+                    clearable
+                    @keyup.enter.native="handleQuery"
+            >
+            </el-input>
+            <el-input
+                    v-model="wechatAccount"
+                    placeholder="请输入微信账号"
+                    style="width: 250px"
+                    clearable
+                    @keyup.enter.native="handleQuery"
+            >
+            </el-input>
+            <el-input
+                    v-model="phoneNumber"
+                    placeholder="请输入手机号"
+                    style="width: 250px"
+                    clearable
+                    @keyup.enter.native="handleQuery"
+            >
+            </el-input>
+            <el-input
+                    v-model="username"
+                    placeholder="请输入对接人"
+                    style="width: 250px"
+                    clearable
+                    @keyup.enter.native="handleQuery"
+            >
+            </el-input>
+            <el-select v-if="userType > 1" v-model="ipId" placeholder="请选择IP地址" @change="handleQuery" clearable>
+                <el-option
+                        v-for="item in ipList"
+                        :key="item.value"
+                        :label="item.label"
+                        :value="item.value">
+                </el-option>
+            </el-select>
+            <el-button
+                    type="primary"
+                    @click="addCustomer('customer')"
+            >
+                + 新增客户信息
+            </el-button>
+            <el-button class="btn-normal" size="medium" @click="closePopover">关闭图片查看</el-button>
+        </div>
+        <el-table
+                :data="tableData"
+                stripe
+                class="tableBox"
+                @sort-change="handleSortChange"
+        >
+            <el-table-column
+                    prop="company"
+                    label="公司名"
+                    sortable="true"
+            />
+            </el-table-column>
+            <el-table-column
+                    prop="wechatName"
+                    label="微信名"
+                    sortable="true"
+            />
+            </el-table-column>
+            <el-table-column
+                    prop="wechatAccount"
+                    label="微信账号"
+                    sortable="true"
+            />
+            </el-table-column>
+            <el-table-column
+                    prop="phoneNumber"
+                    label="手机号"
+                    sortable="true"
+            />
+            </el-table-column>
+            <el-table-column
+                    prop="username"
+                    label="对接人"
+                    sortable="true"
+            />
+            </el-table-column>
+            <el-table-column
+                    prop="ip"
+                    label="IP地址"
+                    v-if="userType > 1"
+            />
+            </el-table-column>
+            <el-table-column
+                    prop="license"
+                    label="营业执照"
+            >
+                <template slot-scope="scope">
+                    <el-button
+                            size="small"
+                            class="blueBug"
+                            outline:none
+                            @click="showing(scope.row.license,this)"
+                    >点击查看</el-button>
+                </template>
+            </el-table-column>
+            <el-table-column
+                    prop="updateTime"
+                    label="更新时间"
+                    sortable="true"
+            />
+            </el-table-column>
+            <el-table-column
+                    label="操作"
+                    width="160"
+                    align="center"
+            >
+                <template slot-scope="scope">
+                    <el-button
+                            type="text"
+                            size="small"
+                            class="blueBug"
+                            @click="editHandle(scope.row)"
+                    >
+                        修改
+                    </el-button>
+                    <el-button
+                            type="text"
+                            size="small"
+                            class="delBut non"
+                            @click="deleteHandle(scope.row.id)"
+                    >
+                        删除
+                    </el-button>
+                </template>
+            </el-table-column>
+        </el-table>
+        <el-pagination
+                class="pageList"
+                :page-sizes="[10, 20, 30, 40]"
+                :page-size="pageSize"
+                layout="total, sizes, prev, pager, next, jumper"
+                :total="counts"
+                @size-change="handleSizeChange"
+                @current-change="handleCurrentChange"
+        ></el-pagination>
+    </div>
+    <el-dialog
+            :title="customerParams.title"
+            :visible.sync="customerParams.dialogVisible"
+            width="30%"
+            :before-close="handleClose"
+    >
+        <el-form
+                class="demo-form-inline"
+                label-width="100px"
+                :model="customerParams"
+                 ref="customerParams"
+        >
+            <el-form-item
+                    label="公司名："
+                    prop="company"
+                    :rules="[
+                      { required: true, message: '公司名不能为空', trigger: 'blur' }]">
+                <el-input
+                        v-model="customerParams.company"
+                        placeholder="请输入公司名"
+                        maxlength="14"
+                />
+            </el-form-item>
+            <el-form-item label="微信名：">
+                <el-input
+                        v-model="customerParams.wechatName"
+                        placeholder="请输入微信名"
+                        maxlength="14"
+                />
+            </el-form-item>
+            <el-form-item
+                    label="微信账号："
+                    prop="wechatAccount"
+                    :rules="[
+                      { pattern: /^[A-Za-z0-9]{0,}$/, message: '请输入正确的微信账号,不能出现中文', trigger: ['blur', 'change'] }]">
+                <el-input
+                        v-model="customerParams.wechatAccount"
+                        placeholder="请输入微信账号"
+                        maxlength="14"
+                />
+            </el-form-item>
+            <el-form-item
+                    prop="phoneNumber"
+                    label="手机号"
+                    maxlength="11"
+                    :rules="[
+                        { pattern:/^1[3456789]\d{9}$/, message: '请输入正确的手机号码', trigger: ['blur', 'change']}
+                        ]"
+            >
+                <el-input v-model="customerParams.phoneNumber" placeholder="请输入手机号"></el-input>
+            </el-form-item>
+            <el-form-item
+                    label="IP地址"
+                    prop="ipIdList"
+                    v-if="userType > 1"
+            >
+                <el-select v-model="customerParams.ipIdList" multiple placeholder="请选择">
+                    <el-option
+                            v-for="item in ipList"
+                            :key="item.value"
+                            :label="item.label"
+                            :value="item.value">
+                    </el-option>
+                </el-select>
+            </el-form-item>
+            <el-form-item label="营业执照：">
+                <el-upload
+                        action="/api/image/upload"
+                        :before-remove="beforeRemove"
+                        :file-list="fileList">
+                    <el-button size="small" type="primary">点击上传</el-button>
+                    <div slot="tip" class="el-upload__tip">只能上传jpg/png文件，且不超过500kb</div>
+                </el-upload>
+
+            </el-form-item>
+
+        </el-form>
+        <span
+                slot="footer"
+                class="dialog-footer"
+        >
+        <el-button
+                size="medium"
+                @click="handleClose()"
+        >取 消</el-button>
+        <el-button
+                type="primary"
+                size="medium"
+                @click="submitForm()"
+        >确 定</el-button>
+        <el-button
+                v-if="action != 'edit'"
+                type="primary"
+                size="medium"
+                class="continue"
+                @click="submitForm('go')"
+        > 保存并继续添加 </el-button>
+      </span>
+    </el-dialog>
+</div>
+<script src="../../js/vue.js"></script>
+<script src="../../js/element-ui-2.13.0/lib/index.js"></script>
+<script src="../../js/axios-0.18.0.js"></script>
+<script src="../../js/request.js"></script>
+<script src="../../js/query.js"></script>
+<script>
+    new Vue({
+        el: '#category-app',
+        data() {
+            return {
+                showPopover: false,
+                username: '',
+                realName: '',
+                userType: '',
+                userId: '',
+                action: '',
+                counts: 0,
+                pageNum: 1,
+                pageSize: 10,
+                tableData: [],
+                properties: [],
+                newSrc:"",
+                company: '',
+                wechatName: '',
+                wechatAccount: '',
+                phoneNumber: '',
+                orderByColumn: '',
+                isAsc: '',
+                type: '',
+                fileList:[],
+                ipId: '',
+                ipList: [],
+                ipIdList: [],
+                license: '',
+                url: '',
+                srclist: [],
+                customerParams: {
+                    'title': '添加客户信息',
+                    'dialogVisible': false,
+                    'id': '',
+                    'company': '',
+                    'wechatName': '',
+                    'wechatAccount': '',
+                    'phoneNumber': '',
+                    'updateTime': '',
+                    'ipIdList': '',
+                    'license':'',
+                }
+            }
+        },
+        computed: {},
+        created() {
+            this.dealCookie();
+            this.company = localStorage.getItem("company");
+            this.init();
+            window.localStorage.clear();
+        },
+        mounted() {
+        },
+        methods: {
+            //在div中隐藏了一个div然后点击的时候会展示,里面的图片是从动态赋值过来的.再点击图片的时候就
+            showing(license,that){
+                this.showPopover=true;
+                this.newSrc=license;
+                console.log("查看图片")
+                console.log(that)
+                this.srclist=[license]
+                console.log(license)
+                that.setAttribute(':preview-src-list',this.srclist);
+                const img=document.getElementById("license");
+                img.src=this.newSrc;
+                img.alt="picture"
+                img.style.display="block"
+            },
+            closePopover(){
+                this.showPopover = false//关闭就是把v-model设置成false
+                // this.init()
+            },
+            dealCookie() {
+                // 对cookie操作
+                var cookies = document.cookie;
+                var cookie_array = cookies.split(";");
+                for (var i = 0; i < cookie_array.length; i++) {
+                    var cookie = cookie_array[i];
+                    var array = cookie.split("=");
+                    if (array[0] == "realName") {
+                        this.realName = array[1];
+                    }
+                    if (array[0] == " userType") {
+                        this.userType = array[1];
+                    }
+                }
+            },
+            async init() {
+                this.ipList = []
+                await queryAllIp({
+                    'pageSize': 10000,
+                    'pageNum': 1
+                }).then(res => {
+                    res.result.data.forEach(item => {
+                        let arr = {
+                            value: item.ipId,
+                            label: item.ip
+                        };
+                        this.ipList.push(arr);
+                    });
+                }).catch(err => {
+                    this.$message.error('请求出错了：' + err)
+                });
+                await queryAllCustomer({
+                    'pageNum': this.pageNum,
+                    'pageSize': this.pageSize,
+                    'userId': this.userId,
+                    'company': this.company,
+                    'phoneNumber': this.phoneNumber,
+                    'wechatName': this.wechatName,
+                    'wechatAccount': this.wechatAccount,
+                    'orderByColumn': this.orderByColumn,
+                    'isAsc': this.isAsc,
+                    'username': this.username,
+                     'license':this.license,
+                    'ipId': this.ipId
+                }).then(res => {
+                    if (String(res.code) == 200) {
+                        this.tableData = res.result.data
+                        this.counts = Number(res.result.total)
+                    } else {
+                        this.$message.error(res.msg || '操作失败')
+                    }
+                }).catch(err => {
+                    this.$message.error('请求出错了：' + err)
+                });
+            },
+            handleQuery() {
+                this.init();
+            },
+            // 添加
+            addCustomer(st) {
+                if (st == 'customer') {
+                    this.customerParams.title = '新增客户信息'
+                }
+                this.action = 'add'
+                this.customerParams.company = ''
+                this.customerParams.wechatName = ''
+                this.customerParams.wechatAccount = ''
+                this.customerParams.phoneNumber = ''
+                this.customerParams.updateTime = ''
+                this.customerParams.ipIdList = []
+                this.customerParams.dialogVisible = true
+                this.init()
+            },
+            editHandle(dat) {
+                this.customerParams.title = '修改客户信息'
+                this.action = 'edit'
+                this.customerParams.company = dat.company
+                this.customerParams.wechatName = dat.wechatName
+                this.customerParams.wechatAccount = dat.wechatAccount
+                this.customerParams.phoneNumber = dat.phoneNumber
+                this.customerParams.updateTime = dat.updateTime
+                this.customerParams.id = dat.id
+                this.customerParams.ipIdList = dat.ipIdList
+                this.customerParams.dialogVisible = true
+                this.init()
+            },
+            // 关闭弹窗
+            handleClose(st) {
+                this.customerParams.dialogVisible = false
+                this.$refs['customerParams'].resetFields()
+                this.fileList = []
+            },
+            //删除
+            deleteHandle(id) {
+                this.$confirm('此操作将永久删除该条信息, 是否继续?', '提示', {
+                    'confirmButtonText': '确定',
+                    'cancelButtonText': '取消',
+                    'type': 'warning'
+                }).then(() => {
+                    deleteCustomer({'id': id}).then(res => {
+                        if (res.code === 200) {
+                            this.$message.success('删除成功！')
+                            this.handleQuery()
+                        } else {
+                            this.$message.error(res.msg || '操作失败')
+                        }
+                    }).catch(err => {
+                        this.$message.error('请求出错了：' + err)
+                    })
+                })
+            },
+            //数据提交
+            submitForm(st) {
+                this.$refs['customerParams'].validate((valid) => {
+                    if (valid) {
+                        console.log(valid)
+                        const customerParams = this.customerParams
+                        if (this.action === 'add') {
+                                addCustomer(customerParams).then(res => {
+                                    console.log(res)
+                                    if (res.code === 200) {
+                                        this.$message.success('客户信息添加成功！')
+                                        if (!st) {
+                                            this.customerParams.dialogVisible = false
+                                        }
+                                        this.handleQuery()} else {
+                                        this.$message.error(res.msg || '操作失败')
+                                    }
+                                }).catch(err => {
+                                    this.$message.error('请求出错了：' + err)
+                                })
+                        } else if (this.action === 'edit') {
+                            updateCustomer(customerParams).then(res => {
+                                console.log(res)
+                                if (res.code === 200) {
+                                    this.$message.success('客户信息修改成功！')
+                                    if (!st) {
+                                        this.customerParams.dialogVisible = false
+                                    }
+                                    this.handleQuery()
+                                } else {
+                                    this.$message.error(res.msg || '操作失败')
+                                }
+                            }).catch(err => {
+                                this.$message.error('请求出错了：' + err)
+                            })
+                        }
+
+                    }
+                });
+            }
+
+            ,
+            handleSizeChange(val) {
+                this.pageSize = val
+                this.init()
+            }
+            ,
+            handleCurrentChange(val) {
+                this.pageNum = val
+                this.init()
+            }
+            ,
+            handleSortChange(val) {
+                if (val.column) {
+                    this.orderByColumn = val.prop
+                    this.isAsc = val.order == 'ascending' ? 'ASC' : 'DESC'
+                }
+                this.init()
+            },
+            handleRemove(file, fileList) {
+                console.log(file, fileList);
+            },
+            handlePreview(file) {
+                console.log(file);
+            },
+            beforeRemove(file, fileList) {
+                return this.$confirm(`确定移除 ${ file.name }？`);
+            }
+        }
+    })
+</script>
+</body>
+</html>

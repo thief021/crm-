@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zhongfeng.api.modules.circuit.mapper.CircuitMapper">
+
+    <!--  新增线路  -->
+    <insert id="addCircuit">
+        INSERT INTO `circuit`
+        SET update_time = NOW()
+        <if test="params.property != null and params.property != ''">
+            ,property = #{params.property}
+        </if>
+        <if test="params.prefix != null and params.prefix != ''">
+            ,prefix = #{params.prefix}
+        </if>
+        <if test="params.blindArea != null and params.blindArea != ''">
+            ,blind_area = #{params.blindArea}
+        </if>
+        <if test="params.frequency != null and params.frequency != ''">
+            ,frequency = #{params.frequency}
+        </if>
+        <if test="params.price != null and params.price != ''">
+            ,price = #{params.price}
+        </if>
+        <if test="params.startTime != null and params.startTime != ''">
+            ,start_time = #{params.startTime}
+        </if>
+        <if test="params.endTime != null and params.endTime != ''">
+            ,end_time = #{params.endTime}
+        </if>
+    </insert>
+
+    <!--  添加线路属性  -->
+    <insert id="addCircuitProperty">
+        INSERT INTO `circuit_property`
+        SET property = #{params.property}
+    </insert>
+
+    <!--  修改线路  -->
+    <update id="updateCircuitProperty">
+        UPDATE `circuit_property`
+        SET property = #{params.property}
+        WHERE
+            id = #{params.id}
+    </update>
+
+    <!--  删除线路  -->
+    <delete id="deleteCircuitProperty">
+        DELETE
+        FROM
+            `circuit_property`
+        WHERE
+            id = #{id};
+    </delete>
+
+    <!--  查询全部自有属性线路  -->
+    <select id="queryAllCircuits" resultType="com.zhongfeng.api.modules.circuit.vo.CircuitVo">
+        SELECT
+            id AS id,
+            property AS property,
+            CONCAT(start_time, '-', end_time) AS timeSpan,
+            prefix AS prefix,
+            blind_area AS blindArea,
+            frequency AS frequency,
+            price AS price,
+            update_time AS updateTime,
+            start_time AS startTime,
+            end_time AS endTime
+        FROM
+            `circuit`
+        WHERE
+            1=1
+        <if test="params.orderByColumn != null and params.orderByColumn != ''">
+            ORDER BY ${params.orderByColumn} ${params.isAsc}
+        </if>
+    </select>
+
+    <!--  查询全部线路属性  -->
+    <select id="queryCircuitProperty" resultType="com.zhongfeng.api.modules.circuit.vo.PropertyVo">
+        SELECT
+            id,
+            property
+        FROM
+            circuit_property
+        WHERE
+        1=1
+        <if test="params.property != null and params.property != ''">
+            AND property LIKE CONCAT('%',#{params.property},'%')
+        </if>
+        <if test="params.orderByColumn != null and params.orderByColumn != ''">
+            ORDER BY ${params.orderByColumn} ${params.isAsc}
+        </if>
+    </select>
+
+    <!--  查询属性名数量  -->
+    <select id="checkProperty" resultType="java.lang.Integer">
+        SELECT
+            COUNT(*)
+        FROM
+            circuit_property
+        WHERE
+        property = #{params.property}
+    </select>
+
+</mapper>

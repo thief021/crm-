@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zhongfeng.api.modules.user.mapper.UserMapper">
+
+    <!--  添加用户  -->
+    <insert id="addUser">
+        INSERT INTO `user`
+        SET user_name = #{params.username},
+            `name` = #{params.realName},
+            `password` = #{params.password},
+            user_type = #{params.type},
+            phone = #{params.phone},
+            wechat = #{params.wechat}
+    </insert>
+
+    <update id="updateUser">
+        UPDATE `user`
+        SET user_name = #{params.username},
+            `name` = #{params.realName},
+            `password` = #{params.password},
+            user_type = #{params.type},
+            phone = #{params.phone},
+            wechat = #{params.wechat}
+        WHERE
+            id = #{params.id}
+    </update>
+
+    <!--  删除用户  -->
+    <delete id="deleteUser">
+        DELETE
+        FROM
+            `user`
+        WHERE
+            id = #{id};
+    </delete>
+
+    <!--  查询用户名  -->
+    <select id="queryUserByUsername" resultType="java.lang.Integer">
+        SELECT
+            COUNT(1)
+        FROM
+            user
+        WHERE
+            user_name = #{username}
+    </select>
+
+    <!--  检查账号密码  -->
+    <select id="checkAccount" resultType="String">
+        SELECT
+            password
+        FROM
+            user
+        WHERE
+            user_name = #{username}
+    </select>
+
+
+    <select id="queryUser" resultType="com.zhongfeng.api.modules.user.vo.UserVo">
+        SELECT
+            name AS realName,
+            id,
+            user_type AS type
+        FROM
+            user
+        WHERE
+            user_name = #{username}
+    </select>
+
+    <select id="queryUserById" resultType="com.zhongfeng.api.modules.user.vo.UserVo">
+        select
+            id AS id,
+            `name` AS realName,
+            user_name AS username,
+            `password` AS `password`,
+            user_type AS type,
+            (
+                CASE user_type
+                    WHEN 1 THEN
+                        '销售'
+                    WHEN 2 THEN
+                        '运维'
+                    WHEN 3 THEN
+                        '技术'
+                    WHEN 4 THEN
+                        '超级管理员'
+                    END
+                ) AS userType,
+            phone AS phone,
+            wechat AS wechat
+        from
+        user
+        where
+        id = #{userId}
+    </select>
+
+    <!--  查询全部用户  -->
+    <select id="queryAllUser" resultType="com.zhongfeng.api.modules.user.vo.UserVo">
+        SELECT
+            id AS id,
+            `name` AS realName,
+            user_name AS username,
+            `password` AS `password`,
+            user_type AS type,
+            (
+                CASE user_type
+                    WHEN 1 THEN
+                        '销售'
+                    WHEN 2 THEN
+                        '运维'
+                    WHEN 3 THEN
+                        '技术'
+                    WHEN 4 THEN
+                        '超级管理员'
+                    END
+                ) AS userType,
+            phone AS phone,
+            wechat AS wechat
+        FROM
+            `user`
+        WHERE
+            1 = 1
+        <if test="params.userId != null and params.userType == 4">
+            AND id = #{params.userId}
+        </if>
+        <if test="params.realName != null and params.realName != ''">
+            AND `name` LIKE CONCAT('%',#{params.realName},'%')
+        </if>
+        <if test="params.phone != null and params.phone != ''">
+            AND `phone` LIKE CONCAT('%',#{params.phone},'%')
+        </if>
+        <if test="params.type != null and params.type != ''">
+            AND `user_type` = #{params.type}
+        </if>
+        <if test="params.wechat != null and params.wechat != ''">
+            AND `wechat` LIKE CONCAT('%',#{params.wechat},'%')
+        </if>
+        <if test="params.orderByColumn != null and params.orderByColumn != ''">
+            ORDER BY ${params.orderByColumn} ${params.isAsc}
+        </if>
+    </select>
+
+    <!--  检查用户名  -->
+    <select id="checkUsername" resultType="java.lang.Integer">
+        SELECT
+            COUNT(*)
+        FROM
+            `user`
+        WHERE
+            user_name = #{username}
+    </select>
+</mapper>

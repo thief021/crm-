@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>自有线路</title>
+    <!-- 引入样式 -->
+    <link rel="stylesheet" href="../../js/element-ui-2.13.0/lib/theme-chalk/index.css">
+    <link rel="stylesheet" href="../../styles/common.css"/>
+    <link rel="stylesheet" href="../../styles/index.css"/>
+    <link rel="stylesheet" href="../../styles/icon/iconfont.css"/>
+    <link rel="stylesheet" href="../../styles/pages.css"/>
+</head>
+<body>
+<div class="dashboard-container" id="category-app">
+    <div class="container">
+        <div
+                class="tableBar"
+                style="display: inline-block"
+        >
+            <el-input
+                    v-model="property"
+                    placeholder="请输入线路属性(按Enter查询)"
+                    style="width: 250px"
+                    clearable
+                    @keyup.enter.native="handleQuery"
+            >
+            </el-input>
+            <el-button
+                    type="primary"
+                    @click="addCircuit('circuit')"
+            >
+                + 新增线路属性
+            </el-button>
+        </div>
+        <el-table
+                :data="tableData"
+                stripe
+                class="tableBox"
+                @sort-change="handleSortChange"
+        >
+            <el-table-column
+                    prop="property"
+                    label="线路属性"
+                    sortable="true"
+            />
+            </el-table-column>
+            <el-table-column
+                    v-if="userType > 1"
+                    label="操作"
+                    width="160"
+                    align="center"
+            >
+                <template slot-scope="scope">
+                    <el-button
+                            type="text"
+                            size="small"
+                            class="blueBug"
+                            @click="editHandle(scope.row)"
+                    >
+                        修改
+                    </el-button>
+                    <el-button
+                            type="text"
+                            size="small"
+                            class="delBut non"
+                            @click="deleteHandle(scope.row.id)"
+                    >
+                        删除
+                    </el-button>
+                </template>
+            </el-table-column>
+        </el-table>
+        <el-pagination
+                class="pageList"
+                :page-sizes="[10, 20, 30, 40]"
+                :page-size="pageSize"
+                layout="total, sizes, prev, pager, next, jumper"
+                :total="counts"
+                @size-change="handleSizeChange"
+                @current-change="handleCurrentChange"
+        ></el-pagination>
+    </div>
+    <el-dialog
+            :title="circuitParams.title"
+            :visible.sync="circuitParams.dialogVisible"
+            width="30%"
+            :before-close="handleClose"
+    >
+        <el-form
+                class="demo-form-inline"
+                label-width="100px"
+                :model="circuitParams"
+                ref="circuitParams"
+        >
+            <el-form-item
+                    label="线路属性："
+                    prop="property"
+                    :rules="[
+                      { required: true, message: '线路属性不能为空', trigger: 'blur' }]">
+                <el-input
+                        v-model="circuitParams.property"
+                        placeholder="请输入线路属性"
+                        maxlength="14"
+                />
+            </el-form-item>
+        </el-form>
+        <span
+                slot="footer"
+                class="dialog-footer"
+        >
+        <el-button
+                size="medium"
+                @click="handleClose()"
+        >取 消</el-button>
+        <el-button
+                type="primary"
+                size="medium"
+                @click="submitForm()"
+        >确 定</el-button>
+        <el-button
+                v-if="action != 'edit'"
+                type="primary"
+                size="medium"
+                class="continue"
+                @click="submitForm('go')"
+        > 保存并继续添加 </el-button>
+      </span>
+    </el-dialog>
+</div>
+<script src="../../js/vue.js"></script>
+<script src="../../js/element-ui-2.13.0/lib/index.js"></script>
+<script src="../../js/axios-0.18.0.js"></script>
+<script src="../../js/request.js"></script>
+<script src="../../js/query.js"></script>
+<script>
+    new Vue({
+        el: '#category-app',
+        data() {
+            return {
+                realName: '',
+                userId: '',
+                userType: '',
+                action: '',
+                counts: 0,
+                pageNum: 1,
+                pageSize: 10,
+                tableData: [],
+                properties: [],
+                property: '',
+                orderByColumn: '',
+                isAsc: '',
+                type: '',
+                circuitParams: {
+                    'title': '添加自有线路',
+                    'dialogVisible': false,
+                    'property': ''
+                }
+            }
+        },
+        computed: {},
+        created() {
+            this.dealCookie();
+            this.init();
+        },
+        mounted() {
+        },
+        methods: {
+            dealCookie() {
+                // 对cookie操作
+                var cookies = document.cookie;
+                var cookie_array = cookies.split(";");
+                for (var i = 0; i < cookie_array.length; i++) {
+                    var cookie = cookie_array[i];
+                    var array = cookie.split("=");
+                    if (array[0] == "realName") {
+                        this.realName = array[1]
+                    }
+                    if (array[0] == " userType") {
+                        this.userType = array[1]
+                    }
+                }
+            },
+            async init() {
+                await queryCircuitProperty({
+                    'pageNum': this.pageNum,
+                    'pageSize': this.pageSize,
+                    'property': this.property,
+                    'orderByColumn': this.orderByColumn,
+                    'isAsc': this.isAsc,
+                }).then(res => {
+                    if (String(res.code) == 200) {
+                        this.tableData = res.result.data
+                        this.counts = Number(res.result.total)
+                    } else {
+                        this.$message.error(res.msg || '操作失败')
+                    }
+                }).catch(err => {
+                    this.$message.error('请求出错了：' + err)
+                });
+            },
+            handleQuery() {
+                this.init();
+            },
+            // 添加
+            addCircuit(st) {
+                if (st == 'circuit') {
+                    this.circuitParams.title = '新增线路属性'
+                }
+                this.action = 'add'
+                this.circuitParams.property = ''
+                this.circuitParams.id = ''
+                this.circuitParams.dialogVisible = true
+            },
+            editHandle(dat) {
+                this.circuitParams.title = '修改线路属性'
+                this.action = 'edit'
+                this.circuitParams.property = dat.property
+                this.circuitParams.id = dat.id
+                this.circuitParams.dialogVisible = true
+            },
+            // 关闭弹窗
+            handleClose() {
+                console.log("关闭页面")
+                this.circuitParams.dialogVisible = false
+                this.$refs['circuitParams'].resetFields()
+            },
+            //删除
+            deleteHandle(id) {
+                this.$confirm('此操作将永久删除该文件, 是否继续?', '提示', {
+                    'confirmButtonText': '确定',
+                    'cancelButtonText': '取消',
+                    'type': 'warning'
+                }).then(() => {
+                    deleteCircuitProperty({'id': id}).then(res => {
+                        if (res.code === 200) {
+                            this.$message.success('删除成功！')
+                            this.handleQuery()
+                        } else {
+                            this.$message.error(res.msg || '操作失败')
+                        }
+                    }).catch(err => {
+                        this.$message.error('请求出错了：' + err)
+                    })
+                })
+            },
+            //数据提交
+            submitForm(st) {
+                this.$refs[`circuitParams`].validate((valid) => {
+                    console.log(valid)
+                    if (valid) {
+                        const circuitParams = this.circuitParams
+                        if (this.action === 'add') {
+                            addCircuitProperty(circuitParams).then(res => {
+                                if (res.code === 200) {
+                                    this.$message.success('线路添加成功！')
+                                    if (!st) {
+                                        this.circuitParams.dialogVisible = false
+                                    }
+                                    this.handleQuery()
+                                } else {
+                                    this.$message.error(res.msg || '操作失败')
+                                }
+                            }).catch(err => {
+                                this.$message.error('请求出错了：' + err)
+                            })
+                        } else if (this.action === 'edit') {
+                            updateCircuitProperty(circuitParams).then(res => {
+                                console.log(res)
+                                if (res.code === 200) {
+                                    this.$message.success('线路修改成功！')
+                                    if (!st) {
+                                        this.circuitParams.dialogVisible = false
+                                    }
+                                    this.handleQuery()
+                                } else {
+                                    this.$message.error(res.msg || '操作失败')
+                                }
+                            }).catch(err => {
+                                this.$message.error('请求出错了：' + err)
+                            })
+                        }
+                    }
+                })
+            }
+            ,
+            handleSizeChange(val) {
+                this.pageSize = val
+                this.init()
+            }
+            ,
+            handleCurrentChange(val) {
+                this.pageNum = val
+                this.init()
+            }
+            ,
+            handleSortChange(val) {
+                if (val.column) {
+                    this.orderByColumn = val.prop
+                    this.isAsc = val.order == 'ascending' ? 'ASC' : 'DESC'
+                }
+                this.init()
+            }
+        }
+    })
+</script>
+</body>
+</html>

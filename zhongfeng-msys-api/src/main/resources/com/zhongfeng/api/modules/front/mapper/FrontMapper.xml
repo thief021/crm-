@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zhongfeng.api.modules.front.mapper.FrontMapper">
+
+
+    <!--  添加上游  -->
+    <insert id="addFront">
+        INSERT INTO `front`
+        SET update_time = NOW()
+        <if test="params.userId != null">
+            ,user_id = #{params.userId}
+        </if>
+        <if test="params.customerId != null">
+            ,customer_id = #{params.customerId}
+        </if>
+        <if test="params.circuitId != null">
+            ,circuit_id = #{params.circuitId}
+        </if>
+        <if test="params.startTime != null and params.startTime != ''">
+            ,start_time = #{params.startTime}
+        </if>
+        <if test="params.endTime != null and params.endTime != ''">
+            ,end_time = #{params.endTime}
+        </if>
+        <if test="params.prefix != null and params.prefix != ''">
+            ,prefix = #{params.prefix}
+        </if>
+        <if test="params.blindArea != null and params.blindArea != ''">
+            ,blind_area = #{params.blindArea}
+        </if>
+        <if test="params.frequency != null and params.frequency != ''">
+            ,frequency = #{params.frequency}
+        </if>
+        <if test="params.price != null">
+            ,price = #{params.price}
+        </if>
+    </insert>
+
+    <!--  修改上游  -->
+    <update id="updateFront">
+        UPDATE `front`
+        SET update_time = NOW()
+          ,customer_id = #{params.customerId}
+          ,circuit_id = #{params.circuitId}
+          ,start_time = #{params.startTime}
+          ,end_time = #{params.endTime}
+          ,prefix = #{params.prefix}
+          ,blind_area = #{params.blindArea}
+          ,frequency = #{params.frequency}
+          ,price = #{params.price}
+        WHERE
+            id = #{params.id}
+    </update>
+
+    <!--  删除上游  -->
+    <delete id="deleteFront">
+        DELETE
+        FROM `front`
+        WHERE id = #{id};
+    </delete>
+
+
+    <!--  查询全部上游  -->
+    <select id="queryAllFront" resultType="com.zhongfeng.api.modules.front.vo.FrontVo">
+        SELECT
+        a.id AS id,
+        a.circuit_id AS circuitId,
+        a.customer_id AS customerId,
+        <choose>
+            <when test="params.frontType == '个人上游'">
+                c.company AS company,
+            </when>
+            <otherwise>
+            </otherwise>
+        </choose>
+        b.property AS circuitProperty,
+        a.start_time AS startTime,
+        a.end_time AS endTime,
+        CONCAT(
+        a.start_time,
+        '-',
+        a.end_time
+        ) AS timeSpan,
+        a.prefix AS prefix,
+        a.blind_area AS blindArea,
+        a.frequency AS frequency,
+        a.price AS price,
+        d.`name` AS username,
+        a.update_time AS updateTime
+        FROM
+        front a
+        LEFT JOIN circuit_property b ON a.circuit_id = b.id
+        LEFT JOIN customer c ON a.customer_id = c.id
+        LEFT JOIN `user` d ON a.user_id = d.id
+        WHERE
+        1=1
+        <choose>
+            <when test="params.frontType == '团队上游'">
+                <if test="params.userId != null and params.userType != 4">
+                    AND a.user_id != #{params.userId}
+                    AND a.user_id != 1
+                </if>
+            </when>
+            <when test="params.frontType == '公司上游'">
+                    AND a.user_id = 1
+            </when>
+            <otherwise>
+                <if test="params.userId != null and params.userType != 4">
+                    AND a.user_id = #{params.userId}
+                </if>
+            </otherwise>
+        </choose>
+        <if test="params.company != null and params.company != ''">
+            AND c.company LIKE CONCAT('%',#{params.company},'%')
+        </if>
+        <if test="params.username != null and params.username != ''">
+            AND d.name LIKE CONCAT('%',#{params.username},'%')
+        </if>
+        <if test="params.circuitId != null">
+            AND a.circuit_id = #{params.circuitId}
+        </if>
+        <if test="params.prefix != null and params.prefix != ''">
+            AND a.prefix LIKE CONCAT('%',#{params.prefix},'%')
+        </if>
+        <if test="params.blindArea != null and params.blindArea != ''">
+            AND a.blind_area LIKE CONCAT('%',#{params.blindArea},'%')
+        </if>
+        <if test="params.price != null">
+            AND a.price = #{params.price}
+        </if>
+        <if test="params.orderByColumn != null and params.orderByColumn != ''">
+            ORDER BY ${params.orderByColumn} ${params.isAsc}
+        </if>
+    </select>
+
+
+</mapper>

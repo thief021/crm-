@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zhongfeng.api.modules.customer.mapper.CustomerMapper">
+
+    <!--  新增线路  -->
+    <insert id="addCustomer">
+        INSERT INTO `customer`
+        SET update_time = NOW()
+        <if test="params.company != null and params.company != ''">
+            ,company = #{params.company}
+        </if>
+        <if test="params.wechatName != null and params.wechatName != ''">
+            ,wechat_name = #{params.wechatName}
+        </if>
+        <if test="params.wechatAccount != null and params.wechatAccount != ''">
+            ,wechat_account = #{params.wechatAccount}
+        </if>
+        <if test="params.phoneNumber != null and params.phoneNumber != ''">
+            ,phone_number = #{params.phoneNumber}
+        </if>
+        <if test="params.userId != null and params.userId != ''">
+            ,user_id = #{params.userId}
+        </if>
+        <if test="params.licenseId != null and params.licenseId != ''">
+            ,license = #{params.licenseId}
+        </if>
+        <if test="params.ip != null and params.ip != ''">
+            ,ip_id = #{params.ip}
+        </if>
+    </insert>
+
+    <!--  修改客户  -->
+    <update id="updateCustomer">
+        UPDATE `customer`
+        SET update_time    = NOW()
+          , company        = #{params.company}
+          , wechat_name    = #{params.wechatName}
+          , wechat_account = #{params.wechatAccount}
+          , phone_number   = #{params.phoneNumber}
+          , license=       #{params.licenseId}
+          , ip_id          = #{params.ip}
+        WHERE id = #{params.id}
+    </update>
+
+    <!--  删除客户  -->
+    <delete id="deleteCustomer">
+        DELETE
+        FROM `customer`
+        WHERE id = #{id};
+    </delete>
+
+    <!--  查询全部客户信息  -->
+    <select id="queryAllCustomer" resultType="com.zhongfeng.api.modules.customer.vo.CustomerVo">
+        SELECT
+        a.id AS id,
+        company AS company,
+        wechat_name AS wechatName,
+        wechat_account AS wechatAccount,
+        phone_number AS phoneNumber,
+        user_id AS userId,
+        update_time AS updateTime,
+        c.name As license,
+        b.name AS username,
+        a.ip_id AS ipId
+        FROM
+        `customer` a
+        LEFT JOIN `user` b ON a.user_id = b.id
+        LEFT JOIN `license` c on c.id = a.license
+        WHERE
+        1=1
+        <if test="params.userId != null and params.userType != 4">
+            AND user_id = #{params.userId}
+        </if>
+        <if test="params.company != null and params.company != ''">
+            AND company LIKE CONCAT('%',#{params.company},'%')
+        </if>
+        <if test="params.wechatName != null and params.wechatName != ''">
+            AND wechat_name LIKE CONCAT('%',#{params.wechatName},'%')
+        </if>
+        <if test="params.wechatAccount != null and params.wechatAccount != ''">
+            AND wechat_account LIKE CONCAT('%',#{params.wechatAccount},'%')
+        </if>
+        <if test="params.phoneNumber != null and params.phoneNumber != ''">
+            AND phone_number LIKE CONCAT('%',#{params.phoneNumber},'%')
+        </if>
+        <if test="params.username != null and params.username != ''">
+            AND b.name LIKE CONCAT('%',#{params.username},'%')
+        </if>
+        <if test="params.ipId != null">
+            AND ip_id LIKE CONCAT('%[',#{params.ipId},']%')
+        </if>
+        <if test="params.orderByColumn != null and params.orderByColumn != ''">
+            ORDER BY ${params.orderByColumn} ${params.isAsc}
+        </if>
+    </select>
+
+    <!--  查询IP地址  -->
+    <select id="queryIp" resultType="java.lang.String">
+        SELECT
+        ip
+        FROM
+        `ip`
+        WHERE
+        1 = 1
+        <if test="idList != null and idList.size > 0">
+            AND id IN
+            <foreach collection="idList" index="index" separator="," open="(" close=")" item="item">
+                ${item}
+            </foreach>
+        </if>
+    </select>
+
+    <!--  检查公司名是否存在  -->
+    <select id="checkCompany" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM `customer`
+        WHERE company = #{params.company}
+          AND user_id = #{params.userId}
+    </select>
+
+</mapper>
